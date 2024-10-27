@@ -19,6 +19,9 @@ Fat_Struct FAT;
 // CWD (Current Working Directory)
 Folder_Struct* CWD;
 
+//DISK name
+char* string;
+
 const static char* CMD_ARRAY[TOTAL_COMMANDS] = {
     "quit",     
     "clear",    
@@ -56,8 +59,11 @@ int main(int argc, char** argv){
     char split1[MAX_INPUT];
     char* split_input[2] = {split0, split1};
 
+    string = calloc(1, MAX_STR_LEN);
+    strcpy(string, argv[1]);
+
     shell_INIT();
-    shell_CLEAR();
+    shell_CLEAR(string);
 
     while(1){
 
@@ -88,6 +94,8 @@ int main(int argc, char** argv){
 
         if(strcmp(split_input[0], "quit") == 0){
             if (n_args == 0){
+                free(string);
+
                 free(CWD);
 
                 printf("FAT DESTR\n");

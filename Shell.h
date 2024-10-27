@@ -14,7 +14,7 @@ typedef int (*fun_ptr)(void*);
 
 void shell_INIT();
 
-void shell_CLEAR();
+void shell_CLEAR(char* s);
 
 void shell_READ(char* input, char* msg);
 

@@ -9,14 +9,14 @@
 
 //DISK FUNCTIONS:
 void Disk_INIT(Disk_Struct* disk, char* name){
-    if(disk->IsValid){
-        Error_HANDLER("ERROR: Disk Already Existing");
+    if(name == NULL || strcmp(name, "") == 0){
+        Error_HANDLER("ERROR: Empty Name");
     }
     if(strlen(name) > MAX_STR_LEN){
         Error_HANDLER("ERROR: Invalid Disk Name");
     }
-    if(name == NULL || strcmp(name, "") == 0){
-        Error_HANDLER("ERROR: Empty Name");
+    if(disk->IsValid){
+        Error_HANDLER("ERROR: Disk Already Existing");
     }
 
     disk->IsValid = 1;

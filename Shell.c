@@ -12,10 +12,11 @@
 extern Disk_Struct DISK;
 extern Fat_Struct FAT;
 extern Folder_Struct* CWD;
+extern char* string;
 
-void shell_CLEAR(){
+void shell_CLEAR(char* s){
     printf("\033[H\033[J");
-    printf("FAT PROJECT:\n\n");
+    printf("FAT PROJECT: %s\n\n", s);
 
 }
 
@@ -113,7 +114,7 @@ int _quit(void* arg){
 }
 
 int _clear(void* arg){
-    shell_CLEAR();
+    shell_CLEAR(string);
     return 0;
 }
 
