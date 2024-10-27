@@ -25,12 +25,12 @@ int split_str(char *string, char **array){
 
 int validate_string(char* s){
     if(strlen(s) == 0){
-        printf("INPUT can't be empty");
+        printf("INPUT can't be empty\n");
         return -1;
     }
 
     if(strlen(s) > 128){
-        printf("INPUT too long");
+        printf("INPUT too long\n");
         return -1;
     }
     char forbidden[] = "\\,/&\"()";

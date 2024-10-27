@@ -351,8 +351,6 @@ void List_Elem_ADD(Folder_Struct* dest, List_Elem* source){
         char* buffer = READ(&DISK, &FAT, index, BLOCKS_SIZE);
         memcpy(fsn, buffer, BLOCKS_SIZE);
 
-        printf("INDEX: %d\n", index);
-
         for(int i = 0; i < MAX_ELEM_NB; i++){
 
             if(strcmp(fsn->FileList[i].Name, "") == 0){
@@ -366,6 +364,7 @@ void List_Elem_ADD(Folder_Struct* dest, List_Elem* source){
                 REWRITE_BLOCK(&DISK, &FAT, index, (char*)(fsn));
                 
                 free(fsn);
+                free(buffer);
                 return;
             }
         }
@@ -373,6 +372,7 @@ void List_Elem_ADD(Folder_Struct* dest, List_Elem* source){
         i++;
         prev = index;
         index = Fat_GET_NEXT(&FAT, index);
+        free(buffer);
     }
 
     if(index == -1){
@@ -383,8 +383,6 @@ void List_Elem_ADD(Folder_Struct* dest, List_Elem* source){
 
         Folder_Struct_Next_INIT(&DISK, &FAT, fsn, i, prev);
         memcpy(&fsn->FileList[0], source, sizeof(List_Elem));
-
-        //printf("prev: %d\n", prev);
 
         index = Fat_GET_NEXT(&FAT, prev);
         REWRITE_BLOCK(&DISK, &FAT, index, (char*)fsn);
