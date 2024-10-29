@@ -33,7 +33,8 @@ int validate_string(char* s){
         printf("INPUT too long\n");
         return -1;
     }
-    char forbidden[] = "\\,/&\"()";
+
+    char forbidden[] = "\\,/&\"()'";
     for(int i = 0; i < strlen(s); i++){
         for(int j = 0; j < strlen(forbidden); j++){
             if(s[i] == forbidden[j]) return -1;

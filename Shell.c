@@ -15,7 +15,7 @@ extern Folder_Struct* CWD;
 extern char* string;
 
 void shell_CLEAR(char* s){
-    printf("\033[H\033[J");
+    // printf("\033[H\033[J");
     printf("FAT PROJECT: %s\n\n", s);
 
 }

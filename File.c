@@ -16,7 +16,7 @@ extern Folder_Struct* CWD;
 //TO INIT OR CREATE:
 Folder_Struct* Root_INIT(Disk_Struct* disk, Fat_Struct* fat){
     File_Header* root = calloc(1, sizeof(File_Header));
-    
+
     root->IsFolder = 1;
     strcpy(root->Name, "root");
     root->BSize = sizeof(File_Header);
@@ -41,6 +41,11 @@ Folder_Struct* Root_INIT(Disk_Struct* disk, Fat_Struct* fat){
     memcpy(buffer, root_srtuct, sizeof(Folder_Struct));
 
     WRITE(disk, fat, first_block, buffer);
+
+    printf("SPERMA: %d\n", fat->IsPerma);
+    if(fat->IsPerma){
+        memcpy(root_srtuct, disk->Buffer + (5*BLOCKS_SIZE), BLOCKS_SIZE);
+    }
 
     free(buffer);
     free(root);

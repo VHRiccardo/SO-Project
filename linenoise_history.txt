@@ -1,0 +1,122 @@
+mk a
+mk b 
+mk c
+ls
+quit
+mk a
+mk b
+mk c
+ls
+quit
+mk a
+mk b
+mk c
+ls
+quit
+mk a
+mk b
+mk c
+ls
+quit
+mk a
+mk b
+mk c
+ls
+quit
+mk a
+mk b
+mk c
+ls
+quit
+ls
+quit
+ls
+quit
+mk a
+mk b
+km c
+mk c
+ls
+quit
+ls
+mk a
+mk 
+mk b
+mk c
+ls
+quit
+mk a
+mk 
+mk b
+mk 
+mk c
+ls
+quit
+ls
+quit
+ls
+quit
+mk a
+ls
+quit
+mk a
+ls
+mk b
+ls
+quit
+ls
+quit
+mk a
+mk b
+mk c
+ls
+quit
+ls
+quit
+ls
+quit
+mk a
+mk b
+mk c
+ls
+quit
+ls
+quit
+mk a
+mk b
+mk 
+mk c
+ls
+quit
+ls
+quit
+ls
+quit
+ls
+mk a
+mk b
+mk 
+mk c
+mk d
+ls
+quit
+ls
+quit
+mk a
+mk b
+mk c
+mk 
+ls
+quit
+ls
+quit
+ls
+quit
+mk a
+mk b
+mk 
+mk c
+ls
+quit
+ls
+quit

@@ -94,6 +94,8 @@ int main(int argc, char** argv){
 
         if(strcmp(split_input[0], "quit") == 0){
             if (n_args == 0){
+                SAVE(&DISK, &FAT, string);    
+
                 free(string);
 
                 free(CWD);

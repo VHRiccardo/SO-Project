@@ -2,10 +2,15 @@
 #include <sys/mman.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 //--PERSONAL INCLUDES--//
 #include "FileSystem.h"
 #include "functions.h"
+
+//GLOBAL
+int FAT_INDEX[FAT_STRUCT_SIZE/BLOCKS_SIZE];
+
 
 //DISK FUNCTIONS:
 void Disk_INIT(Disk_Struct* disk, char* name){
@@ -15,19 +20,28 @@ void Disk_INIT(Disk_Struct* disk, char* name){
     if(strlen(name) > MAX_STR_LEN){
         Error_HANDLER("ERROR: Invalid Disk Name");
     }
-    if(disk->IsValid){
-        Error_HANDLER("ERROR: Disk Already Existing");
+
+    if(validate_string(name)){
+        strcpy(disk->SessionName, name);
+        disk->IsValid = 1;
+        disk->Buffer = (char*) mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+        if(disk->Buffer == MAP_FAILED){
+            Error_HANDLER("ERROR: Invalid Disk Mapping");
+        }
+
+        if(access(name, F_OK | R_OK | W_OK) == 0){
+            FILE* f = fopen(name, "r+");
+            if(fread(disk->Buffer, 1, SIZE, f) == 0){
+                Error_HANDLER("ERROR: Impossible to Download DISK data");
+            }
+            fclose(f);
+        }else{
+            memset(disk->Buffer, 0, SIZE);
+        }
+    }else{
+        Error_HANDLER("ERROR: Invalid Disk Name");
     }
-
-    disk->IsValid = 1;
-    strcpy(disk->SessionName, name);
-
-    disk->Buffer = (char*) mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-    if(disk->Buffer == MAP_FAILED){
-        Error_HANDLER("ERROR: Invalid Disk Mapping");
-    }
-
-    memset(disk->Buffer, 0, SIZE);
+    return;
 }
 
 void Disk_DESTR(Disk_Struct* disk){
@@ -45,23 +59,33 @@ void Fat_INIT(Disk_Struct* disk, Fat_Struct* fat){
     if(!(disk->IsValid)){
         Error_HANDLER("ERROR: Disk NOT Existing");
     }
+
+    memcpy(fat, disk->Buffer, FAT_STRUCT_SIZE);
+
     if((fat->IsValid)){
-        Error_HANDLER("ERROR: FAT ALREADY Existing");
-    }
+        fat->IsPerma = 1;
+        return;
+    }else{
+        fat->IsValid = 1;
+        fat->IsPerma = 0;
+        memset(fat->BMap, 0, FAT_SIZE);
+        memset(fat->BlockList, -1, FAT_SIZE*sizeof(int));
+        fat->FreeBlocks = FAT_SIZE;
 
-    fat->IsValid = 1;
-    memset(fat->BMap, 0, FAT_SIZE);
-    memset(fat->BlockList, -1, FAT_SIZE*sizeof(int));
-    fat->FreeBlocks = FAT_SIZE;
+        int iteraction = FAT_STRUCT_SIZE/BLOCKS_SIZE;
+        if(FAT_STRUCT_SIZE%BLOCKS_SIZE != 0){
+            iteraction++;
+        }
 
-    for(int i = 0; i < FAT_STRUCT_SIZE/BLOCKS_SIZE; i++){
-        ALLOC_BLOCK(disk, fat, i);
+        for(int i = 0; i < iteraction; i++){
+            ALLOC_BLOCK(disk, fat, i);
+            FAT_INDEX[i] = i;
 
-        if(i+1 != FAT_STRUCT_SIZE/BLOCKS_SIZE){
-            Fat_SET_NEXT(fat, i, i+1);
+            if(i+1 != iteraction){
+                Fat_SET_NEXT(fat, i, i+1);
+            }
         }
     }
-
 }
 
 void Fat_DESTR(Disk_Struct* disk, Fat_Struct* fat){
@@ -214,4 +238,21 @@ char* READ(Disk_Struct* disk, Fat_Struct* fat, int index, int size){
         }
     }
     return return_buffer;
+}
+
+void SAVE(Disk_Struct* disk, Fat_Struct* fat, char* name){
+
+    char* block_buffer = calloc(1, BLOCKS_SIZE);
+    for(int i = 0; i < FAT_STRUCT_SIZE/BLOCKS_SIZE; i++){
+        memcpy(block_buffer, (char*)fat + (i*BLOCKS_SIZE), BLOCKS_SIZE);
+        REWRITE_BLOCK(disk, fat, FAT_INDEX[i], block_buffer);
+    }
+    free(block_buffer);
+
+    FILE* f = fopen(name, "w+");
+    if(fwrite(disk->Buffer, 1, SIZE, f) == 0){
+        Error_HANDLER("ERROR: Impossible to save DISK data");
+    }
+    fclose(f);    
+
 }

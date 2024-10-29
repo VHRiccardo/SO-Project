@@ -20,6 +20,8 @@ typedef struct Fat_Struct{
     int FreeBlocks;
     int BlockList[FAT_SIZE];
     char BMap[FAT_SIZE];
+    char IsPerma;
+    char padding[111];
 
 }Fat_Struct;
 
@@ -56,3 +58,5 @@ void WRITE(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer);
 void REWRITE_BLOCK(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer);
 
 char* READ(Disk_Struct* disk, Fat_Struct* fat, int index, int size);
+
+void SAVE(Disk_Struct* disk, Fat_Struct* fat, char* name);
