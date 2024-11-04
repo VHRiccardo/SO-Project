@@ -15,7 +15,7 @@ extern Folder_Struct* CWD;
 extern char* string;
 
 void shell_CLEAR(char* s){
-    // printf("\033[H\033[J");
+    printf("\033[H\033[J");
     printf("FAT PROJECT: %s\n\n", s);
 
 }
@@ -206,12 +206,12 @@ int _cd(void* arg){
     Folder_Struct* newCWD = calloc(1, sizeof(Folder_Struct));
 
     if(strcmp((char*)arg, "..") == 0){
-        if(strcmp(CWD->PrevFolder.Name, "null") == 0){
+        if(CWD->PrevFolder == -1){
             printf("Error: There is NO father folder");
             return 0;
         }
         else{
-            CHANGE_CWD(newCWD, CWD->PrevFolder.FirstBlock);
+            CHANGE_CWD(newCWD, CWD->PrevFolder);
             free(newCWD);
             return 0;
         }

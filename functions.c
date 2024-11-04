@@ -6,7 +6,8 @@
 #include "functions.h"
 
 void Error_HANDLER(char* s){
-    perror(s);
+    printf("[ERROR]: %s\n", s);
+    perror("FORCED EXIT");
     exit(-1);
 }
 

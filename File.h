@@ -1,7 +1,7 @@
 #pragma once
 
 #define MAX_FILE_INPUT (BLOCKS_SIZE - sizeof(File_Header))
-#define MAX_ELEM_FB 5
+#define MAX_ELEM_FB 6
 #define MAX_ELEM_NB 7
 
 //--PERSONAL INCLUDES--//
@@ -39,9 +39,9 @@ typedef struct Folder_Struct{
 
     struct File_Header FileHeader;
     int NumFile;
-    struct List_Elem PrevFolder;
+    int PrevFolder;
     struct List_Elem FileList[MAX_ELEM_FB];
-    char padding[28];
+    char padding[24];
 
 } Folder_Struct;
 

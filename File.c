@@ -31,10 +31,7 @@ Folder_Struct* Root_INIT(Disk_Struct* disk, Fat_Struct* fat){
     Folder_Struct* root_srtuct = calloc(1, sizeof(Folder_Struct));
     root_srtuct->NumFile = 0;
     root_srtuct->FileHeader = *root;
-    root_srtuct->PrevFolder.IsFolder = 0;
-    root_srtuct->PrevFolder.FirstBlock = 0;
-    root_srtuct->PrevFolder.NumBlocks = 0;
-    strcpy(root_srtuct->PrevFolder.Name, "null");
+    root_srtuct->PrevFolder = -1;
 
 
     char* buffer = calloc(1, sizeof(Folder_Struct));
@@ -71,13 +68,7 @@ void Folder_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fh, char* 
     new_folder_srtuct->NumFile = 0;
     new_folder_srtuct->FileHeader = *new_folder;
 
-    strcpy(new_folder_srtuct->PrevFolder.Name, fh->FileHeader.Name);
-    new_folder_srtuct->PrevFolder.IsFolder = 1;
-    new_folder_srtuct->PrevFolder.FirstBlock = fh->FileHeader.FirstBlock;
-    new_folder_srtuct->PrevFolder.NumBlocks = fh->FileHeader.BSize/BLOCKS_SIZE;
-    if(new_folder_srtuct->PrevFolder.NumBlocks == 0 || new_folder_srtuct->PrevFolder.NumBlocks%BLOCKS_SIZE != 0){
-        new_folder_srtuct->PrevFolder.NumBlocks ++;
-    }
+    new_folder_srtuct->PrevFolder = fh->FileHeader.FirstBlock;
 
     char* buffer = calloc(1, sizeof(Folder_Struct));
     memcpy(buffer, new_folder_srtuct, sizeof(Folder_Struct));

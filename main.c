@@ -94,10 +94,10 @@ int main(int argc, char** argv){
 
         if(strcmp(split_input[0], "quit") == 0){
             if (n_args == 0){
+                printf("SAVING DISK...\n");
                 SAVE(&DISK, &FAT, string);    
 
                 free(string);
-
                 free(CWD);
 
                 printf("FAT DESTR\n");

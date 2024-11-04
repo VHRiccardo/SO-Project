@@ -15,10 +15,10 @@ int FAT_INDEX[FAT_STRUCT_SIZE/BLOCKS_SIZE];
 //DISK FUNCTIONS:
 void Disk_INIT(Disk_Struct* disk, char* name){
     if(name == NULL || strcmp(name, "") == 0){
-        Error_HANDLER("ERROR: Empty Name");
+        Error_HANDLER("Empty Name");
     }
     if(strlen(name) > MAX_STR_LEN){
-        Error_HANDLER("ERROR: Invalid Disk Name");
+        Error_HANDLER("Invalid Disk Name");
     }
 
     if(validate_string(name)){
@@ -26,30 +26,33 @@ void Disk_INIT(Disk_Struct* disk, char* name){
         disk->IsValid = 1;
         disk->Buffer = (char*) mmap(NULL, SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
         if(disk->Buffer == MAP_FAILED){
-            Error_HANDLER("ERROR: Invalid Disk Mapping");
+            Error_HANDLER("Invalid Disk Mapping");
         }
 
-        if(access(name, F_OK | R_OK | W_OK) == 0){
+        if(access(name, R_OK | W_OK) == 0){
             FILE* f = fopen(name, "r+");
-            if(fread(disk->Buffer, 1, SIZE, f) == 0){
-                Error_HANDLER("ERROR: Impossible to Download DISK data");
+            int ret = fread(disk->Buffer, 1, SIZE, f);
+            if(ret == 0){
+                Error_HANDLER("Impossible to Download DISK data");
             }
             fclose(f);
+
         }else{
             memset(disk->Buffer, 0, SIZE);
         }
+
     }else{
-        Error_HANDLER("ERROR: Invalid Disk Name");
+        Error_HANDLER("Invalid Disk Name");
     }
     return;
 }
 
 void Disk_DESTR(Disk_Struct* disk){
     if(!(disk->IsValid)){
-        Error_HANDLER("ERROR: Disk NOT Existing");
+        Error_HANDLER("Disk NOT Existing");
     }
     if(munmap(disk->Buffer, SIZE) == -1){
-        Error_HANDLER("ERROR: Failed to Unmap the Disk");
+        Error_HANDLER("Failed to Unmap the Disk");
     }
 }
 
@@ -57,15 +60,22 @@ void Disk_DESTR(Disk_Struct* disk){
 //FAT FUNCTIONS:
 void Fat_INIT(Disk_Struct* disk, Fat_Struct* fat){
     if(!(disk->IsValid)){
-        Error_HANDLER("ERROR: Disk NOT Existing");
+        Error_HANDLER("Disk NOT Existing");
     }
-
+    
     memcpy(fat, disk->Buffer, FAT_STRUCT_SIZE);
 
     if((fat->IsValid)){
+
         fat->IsPerma = 1;
+        int index = 0;
+        for(int i = 0; i < FAT_STRUCT_SIZE/BLOCKS_SIZE; i++){
+            FAT_INDEX[i] = index;
+            index = Fat_GET_NEXT(fat, index);
+        }
         return;
     }else{
+
         fat->IsValid = 1;
         fat->IsPerma = 0;
         memset(fat->BMap, 0, FAT_SIZE);
@@ -90,8 +100,7 @@ void Fat_INIT(Disk_Struct* disk, Fat_Struct* fat){
 
 void Fat_DESTR(Disk_Struct* disk, Fat_Struct* fat){
     if (!(fat->IsValid)){
-        perror("Error: Invalid FAT");
-        exit(-1);
+        Error_HANDLER("Invalid FAT");
     }
     else{
         memset(fat->BMap, 0, FAT_SIZE);
@@ -133,7 +142,7 @@ int Fat_FIND_NEXT_FREE(Fat_Struct* fat){
 //FUNCTIONS for BOTH
 void ALLOC_BLOCK(Disk_Struct* disk, Fat_Struct* fat, int index){
     if(!(disk->IsValid)){
-        Error_HANDLER("ERROR: Disk NOT Existing");
+        Error_HANDLER("Disk NOT Existing");
     }
     memset(disk->Buffer + index*BLOCKS_SIZE, 0, BLOCKS_SIZE);
     if(Fat_BLOCK_IS_FREE(fat, index)){
@@ -142,12 +151,12 @@ void ALLOC_BLOCK(Disk_Struct* disk, Fat_Struct* fat, int index){
         fat->FreeBlocks--;
         return;
     }
-    Error_HANDLER("ERROR: Block Allocation Failed");
+    Error_HANDLER("Block Allocation Failed");
 } 
 
 void DEALLOC_BLOCK(Disk_Struct* disk, Fat_Struct* fat, int index){
     if(!(disk->IsValid)){
-        Error_HANDLER("ERROR: Disk NOT Existing");
+        Error_HANDLER("Disk NOT Existing");
     }
     
     memset(disk->Buffer + index*BLOCKS_SIZE, 0, BLOCKS_SIZE);
@@ -162,13 +171,13 @@ void DEALLOC_BLOCK(Disk_Struct* disk, Fat_Struct* fat, int index){
 
 void WRITE(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer){
     if(!(disk->IsValid)){
-        Error_HANDLER("ERROR: Disk NOT Existing");
+        Error_HANDLER("Disk NOT Existing");
     }
     if(!(fat->IsValid)){
-        Error_HANDLER("ERROR: FAT NOT Existing");
+        Error_HANDLER("FAT NOT Existing");
     }
     if(index*BLOCKS_SIZE >= SIZE){
-        Error_HANDLER("ERROR: Index out of bound");
+        Error_HANDLER("Index out of bound");
     }
     int n_bytes = sizeof(buffer);
     int n_blocks = n_bytes/BLOCKS_SIZE;
@@ -194,13 +203,13 @@ void WRITE(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer){
 
 void REWRITE_BLOCK(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer){
     if(!(disk->IsValid)){
-        Error_HANDLER("ERROR: Disk NOT Existing");
+        Error_HANDLER("Disk NOT Existing");
     }
     if(!(fat->IsValid)){
-        Error_HANDLER("ERROR: FAT NOT Existing");
+        Error_HANDLER("FAT NOT Existing");
     }
     if(index*BLOCKS_SIZE >= SIZE){
-        Error_HANDLER("ERROR: Index out of bound");
+        Error_HANDLER("Index out of bound");
     }
     memcpy(disk->Buffer + (index * BLOCKS_SIZE), buffer, BLOCKS_SIZE);
 
@@ -208,13 +217,13 @@ void REWRITE_BLOCK(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer){
 
 char* READ(Disk_Struct* disk, Fat_Struct* fat, int index, int size){
     if(!(disk->IsValid)){
-        Error_HANDLER("ERROR: Disk NOT Existing");
+        Error_HANDLER("Disk NOT Existing");
     }
     if(!(fat->IsValid)){
-        Error_HANDLER("ERROR: FAT NOT Existing");
+        Error_HANDLER("FAT NOT Existing");
     }
     if(index*BLOCKS_SIZE >= SIZE){
-        Error_HANDLER("ERROR: Index out of bound");
+        Error_HANDLER("Index out of bound");
     }
 
     char* return_buffer = (char*)malloc(size);
@@ -250,8 +259,10 @@ void SAVE(Disk_Struct* disk, Fat_Struct* fat, char* name){
     free(block_buffer);
 
     FILE* f = fopen(name, "w+");
-    if(fwrite(disk->Buffer, 1, SIZE, f) == 0){
-        Error_HANDLER("ERROR: Impossible to save DISK data");
+    int ret = fwrite(disk->Buffer, 1, SIZE, f);
+
+    if(ret == 0){
+        Error_HANDLER("Impossible to save DISK data");
     }
     fclose(f);    
 

@@ -6,7 +6,7 @@ Questo progetto consiste nella simulazione di un File System di tipo **FAT** att
 Un File System di tipo **FAT** (**F**ile **A**llocation **T**able) è caratterizzato da una divisione in blocchi del disco e da una tabella che mantiene traccia delle aree del disco disponibili e di quelle già in uso da file e cartelle. In questo caso il disco denominato **DISK** ha capienza 1.024.000 byte ed è suddiviso in blocchi denominati **BLOCK** da 1.024 byte ciscuno.
 
 #### Avvio:
-Per avviare il progetto è sufficiente eseguire il comando `make` e successivamente mandare in esecuzione il programma `exec` seguito da una stringa che sarà utilizzata come nome del disco. 
+Per avviare il progetto è sufficiente eseguire il comando `make` e successivamente mandare in esecuzione il programma `exec` seguito da una stringa che sarà utilizzata come nome del disco. Se il nome è già stato utilizzato verranno ricaricati i dati precedentemente salvati altrimenti si creerà un nuovo disco.
 
 #### Funzionalità: 
 L'interazione con la struttura dati avverrà unicamente tramite la simulazione di un terminale semplificata dalla libreria `linenoise`. Grazie al comando `help` sarà possibile leggere tutte le funzioni scritte per questa interazione:
@@ -25,6 +25,6 @@ L'interazione con la struttura dati avverrà unicamente tramite la simulazione d
 
 #### Nota a margine 
 
-All'interno del file `ProvaFile.txt` è presente una porzione del primo capitolo del romanzo di C. Collodi *Pinocchio*, per testare la scrittura su file e la stampa di quest'ultimo.
+All'interno del file `TestoPerFile.txt` è presente una porzione del primo capitolo del romanzo di C. Collodi *Pinocchio*, per testare la scrittura su file e la stampa di quest'ultimo.
 
 
