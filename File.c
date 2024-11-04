@@ -505,7 +505,7 @@ int File_EDIT(File_Struct* fs){
 }
 
 void File_CAT(File_Struct* fs){
-    printf("\n----- FILE %s -----\n\n", fs->FileHeader.Name);
+    printf("\n----- FILE %s -----\n", fs->FileHeader.Name);
     File_PRINT(fs);
     printf("------------------\n");
 }
