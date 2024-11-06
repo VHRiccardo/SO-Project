@@ -34,7 +34,8 @@ const static char* CMD_ARRAY[TOTAL_COMMANDS] = {
     "ls",      
     "edit",    
     "help",    
-    "seek"     
+    "seek",
+    "rename"     
 };
 
 int main(int argc, char** argv){
@@ -45,8 +46,6 @@ int main(int argc, char** argv){
     
     Fat_INIT(&DISK, &FAT);
     printf("FAT INIT\n");
-
-    //CWD = calloc(1, sizeof(Folder_Struct));
 
     CWD = Root_INIT(&DISK, &FAT);
     printf("ROOT INIT\n");

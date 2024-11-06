@@ -1,8 +1,8 @@
 #pragma once
 
 #define MAX_FILE_INPUT (BLOCKS_SIZE - sizeof(File_Header))
-#define MAX_ELEM_FB 6
-#define MAX_ELEM_NB 7
+#define MAX_ELEM_FB 216
+#define MAX_ELEM_NB 255
 
 //--PERSONAL INCLUDES--//
 #include "FileSystem.h"
@@ -26,30 +26,19 @@ typedef struct File_Struct{
 
 } File_Struct;
 
-typedef struct List_Elem{
-    
-    char IsFolder;
-    int FirstBlock;
-    int NumBlocks;
-    char Name[MAX_STR_LEN];
-
-}List_Elem;
-
 typedef struct Folder_Struct{
 
     struct File_Header FileHeader;
     int NumFile;
     int PrevFolder;
-    struct List_Elem FileList[MAX_ELEM_FB];
-    char padding[24];
-
+    int IndexList [MAX_ELEM_FB];
+    
 } Folder_Struct;
 
 typedef struct Folder_Struct_Next{
     
     int NumBlock;
-    struct List_Elem FileList[MAX_ELEM_NB];
-    char padding[40];
+    int IndexList[MAX_ELEM_NB];
 
 }Folder_Struct_Next;
 
@@ -59,9 +48,9 @@ typedef struct Folder_Struct_Next{
 //TO INIT OR CREATE:
 Folder_Struct* Root_INIT(Disk_Struct* disk, Fat_Struct* fat);
 
-void Folder_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fh, char* name);
+void Folder_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fs, char* name);
 
-void File_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fh, char* name);
+void File_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fs, char* name);
 
 void Folder_Struct_Next_INIT(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct_Next* fsn, int num_block, int index);
 
@@ -71,23 +60,27 @@ void Folder_DESTROY(Folder_Struct* fs);
 
 void File_DESTROY(File_Struct* fs);
 
-void List_Elem_DESTROY(Folder_Struct* fs, List_Elem* list);
+void Index_List_DESTROY(Folder_Struct *fs, int index);
 
 
 //GETTER:
-void File_GET_FILE(File_Struct* dest, int index);
+void File_GET_FILE(File_Struct* fs, int index);
 
-void Folder_GET_FOLDER(Folder_Struct* dest, int index);
+void Folder_GET_FOLDER(Folder_Struct* fs, int index);
 
-void File_GET_LIST(Folder_Struct* fs, List_Elem* list);
+void File_Header_GET_FILE_HEADER(File_Header* fh, int index);
+
+int* Index_GET_LIST(Folder_Struct* fs);
 
 
 //TO MANAGE:
 int CHANGE_CWD(Folder_Struct* newCWD, int index);
 
-int List_Elem_FIND(Folder_Struct* fs, List_Elem* dest, char* f_name);
+int Index_List_FIND(File_Header* fh, Folder_Struct* fs, char* name);
 
-void List_Elem_ADD(Folder_Struct* dest, List_Elem* source);
+void Index_List_ADD(Folder_Struct* fs, int index);
+
+void File_Header_RENAME(File_Header* fh, char* name);
 
 int File_CHECK_IS_FOLDER(File_Header* fh);
 

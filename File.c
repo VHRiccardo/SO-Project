@@ -15,11 +15,18 @@ extern Folder_Struct* CWD;
 
 //TO INIT OR CREATE:
 Folder_Struct* Root_INIT(Disk_Struct* disk, Fat_Struct* fat){
+    Folder_Struct* root_srtuct = calloc(1, sizeof(Folder_Struct));
+
+    if(fat->IsPerma){
+        memcpy(root_srtuct, disk->Buffer + (5*BLOCKS_SIZE), BLOCKS_SIZE);
+        return root_srtuct;
+    }
+
     File_Header* root = calloc(1, sizeof(File_Header));
 
     root->IsFolder = 1;
     strcpy(root->Name, "root");
-    root->BSize = sizeof(File_Header);
+    root->BSize = 1;
     root->Offset = 0;
 
     int first_block = Fat_FIND_NEXT_FREE(fat);
@@ -28,33 +35,30 @@ Folder_Struct* Root_INIT(Disk_Struct* disk, Fat_Struct* fat){
     root->CurrentBlock = first_block;
     root->NextBlock = -1;
 
-    Folder_Struct* root_srtuct = calloc(1, sizeof(Folder_Struct));
     root_srtuct->NumFile = 0;
     root_srtuct->FileHeader = *root;
     root_srtuct->PrevFolder = -1;
 
+    for(int i = 0; i < MAX_ELEM_FB; i ++){
+        root_srtuct->IndexList[i] = -1;
+    }
 
     char* buffer = calloc(1, sizeof(Folder_Struct));
     memcpy(buffer, root_srtuct, sizeof(Folder_Struct));
 
     WRITE(disk, fat, first_block, buffer);
 
-    printf("SPERMA: %d\n", fat->IsPerma);
-    if(fat->IsPerma){
-        memcpy(root_srtuct, disk->Buffer + (5*BLOCKS_SIZE), BLOCKS_SIZE);
-    }
-
     free(buffer);
     free(root);
     return root_srtuct;
 }
 
-void Folder_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fh, char* name){
+void Folder_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fs, char* name){
     File_Header* new_folder = calloc(1, sizeof(File_Header));
     
     new_folder->IsFolder = 1;
     strcpy(new_folder->Name, name);
-    new_folder->BSize = sizeof(Folder_Struct);
+    new_folder->BSize = 1;
     new_folder->Offset = 0;
 
     int first_block = Fat_FIND_NEXT_FREE(fat);
@@ -68,29 +72,24 @@ void Folder_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fh, char* 
     new_folder_srtuct->NumFile = 0;
     new_folder_srtuct->FileHeader = *new_folder;
 
-    new_folder_srtuct->PrevFolder = fh->FileHeader.FirstBlock;
+    new_folder_srtuct->PrevFolder = fs->FileHeader.FirstBlock;
+    for(int i = 0; i < MAX_ELEM_FB; i ++){
+        new_folder_srtuct->IndexList[i] = -1;
+    }
 
     char* buffer = calloc(1, sizeof(Folder_Struct));
     memcpy(buffer, new_folder_srtuct, sizeof(Folder_Struct));
 
     WRITE(disk, fat, first_block, buffer);
 
-    List_Elem* listelem = calloc(1, sizeof(List_Elem));
-    strcpy(listelem->Name, name);
-    listelem->IsFolder = 1;
-    listelem->FirstBlock = first_block;
-    listelem->NumBlocks = 1;
-
-    List_Elem_ADD(fh, listelem);
+    Index_List_ADD(fs, first_block);
 
     free(new_folder);
     free(new_folder_srtuct);
-    free(listelem);
     free(buffer);
-
 }
 
-void File_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fh, char* name){
+void File_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fs, char* name){
     File_Header* new_file = calloc(1, sizeof(File_Header));
     
     new_file->IsFolder = 0;
@@ -115,26 +114,18 @@ void File_CREATE(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct* fh, char* na
 
     WRITE(disk, fat, first_block, buffer);
 
-    List_Elem* listelem = calloc(1, sizeof(List_Elem));
-    strcpy(listelem->Name, name);
-    listelem->IsFolder = 0;
-    listelem->FirstBlock = first_block;
-    listelem->NumBlocks = 0;
-
-    List_Elem_ADD(fh, listelem);
+    Index_List_ADD(fs, first_block);
 
     free(new_file);
     free(new_file_srtuct);
-    free(listelem);
     free(buffer);
 }
 
 void Folder_Struct_Next_INIT(Disk_Struct* disk, Fat_Struct* fat, Folder_Struct_Next* fsn, int num_block, int index){
     fsn->NumBlock = num_block;
-    for(int i = 0; i < MAX_ELEM_NB; i++){
-        strcpy(fsn->FileList[i].Name, "");
+    for(int i = 0; i < MAX_ELEM_FB; i ++){
+        fsn->IndexList[i] = -1;
     }
-
     int block = Fat_FIND_NEXT_FREE(fat);
     Fat_SET_NEXT(&FAT, index, block);
 
@@ -188,16 +179,15 @@ void File_DESTROY(File_Struct* fs){
     return;
 }
 
-void List_Elem_DESTROY(Folder_Struct* fs, List_Elem* list){
+void Index_List_DESTROY(Folder_Struct *fs, int index){
     int i = 0;
     while(i < MAX_ELEM_FB){
-        if(strcmp(fs->FileList[i].Name, list->Name) == 0){
-                memcpy(&fs->FileList[i].Name, "", 1);
-                CWD->NumFile --;
-                REWRITE_BLOCK(&DISK, &FAT, CWD->FileHeader.FirstBlock, (char*)CWD);
-    
-                return;
-            }
+        if(fs->IndexList[i] == index){
+            fs->IndexList[i] = -1;
+            CWD->NumFile --;
+            REWRITE_BLOCK(&DISK, &FAT, CWD->FileHeader.FirstBlock, (char*)CWD);
+            return;
+        }
         i++;
     }
 
@@ -216,9 +206,8 @@ void List_Elem_DESTROY(Folder_Struct* fs, List_Elem* list){
         i = 0;
         while(i < MAX_ELEM_NB){
 
-            if(strcmp(fsn->FileList[i].Name, list->Name) == 0){
-
-                memcpy(&fsn->FileList[i].Name, "", 1);
+            if(fsn->IndexList[i] == index){
+                fsn->IndexList[i] = -1;
 
                 REWRITE_BLOCK(&DISK, &FAT, id, (char*)fsn);
 
@@ -235,112 +224,110 @@ void List_Elem_DESTROY(Folder_Struct* fs, List_Elem* list){
         id = next_i;
         free(fsn);
     }
-    free(buffer_block);    
+    free(buffer_block); 
 }
 
 
 //GETTER:
-void File_GET_FILE(File_Struct* dest, int index){
+void File_GET_FILE(File_Struct* fs, int index){
     char* buffer_block = READ(&DISK, &FAT, index, BLOCKS_SIZE);
-    memcpy(dest, buffer_block, sizeof(File_Struct));
+    memcpy(fs, buffer_block, sizeof(File_Struct));
 
     free(buffer_block);
     return;
 }
 
-void Folder_GET_FOLDER(Folder_Struct* dest, int index){
+void Folder_GET_FOLDER(Folder_Struct* fs, int index){
     char* buffer_block = READ(&DISK, &FAT, index, BLOCKS_SIZE);
-    memcpy(dest, buffer_block, sizeof(Folder_Struct));
+    memcpy(fs, buffer_block, sizeof(Folder_Struct));
 
     free(buffer_block);
     return;
 }
 
-void File_GET_LIST(Folder_Struct* fs, List_Elem* list){
-    
-    int i = 0;
-    int id = 0;
-    while(i < MAX_ELEM_FB){
+void File_Header_GET_FILE_HEADER(File_Header* fh, int index){
+    char* buffer_block = READ(&DISK, &FAT, index, BLOCKS_SIZE);
+    memcpy(fh, buffer_block, sizeof(File_Header));
 
-        if(strcmp(fs->FileList[i].Name, "") != 0){
-                memcpy(&list[id], &fs->FileList[i], sizeof(List_Elem));
-                id++;
-            }
-        i++;
+    free(buffer_block);
+    return;
+}
+
+int* Index_GET_LIST(Folder_Struct* fs){
+    int* list = calloc(1, fs->NumFile * sizeof(int));
+    int j = 0;
+    for(int i = 0; i < MAX_ELEM_FB; i++){
+        if(fs->IndexList[i] != -1){
+            list[j] = fs->IndexList[i];
+            j++;
+        }
     }
+    int index = Fat_GET_NEXT(&FAT, fs->FileHeader.FirstBlock);
+    if(index == -1){return list;}
 
-    int index = Fat_GET_NEXT(&FAT, fs->FileHeader.CurrentBlock);
-    if(index == -1){return;}
 
     while(index != -1){
         Folder_Struct_Next* fsn = calloc(1, sizeof(Folder_Struct_Next));
         char* buffer_block = READ(&DISK, &FAT, index, BLOCKS_SIZE);
         memcpy(fsn, buffer_block, sizeof(Folder_Struct_Next));
         
-        int elem = 0;
-        while(elem < MAX_ELEM_NB){
-
-            if(strcmp(fsn->FileList[elem].Name, "") != 0){
-                memcpy(&list[id], &fsn->FileList[elem], sizeof(List_Elem));
-                id++;
+        
+        for(int i = 0; i < MAX_ELEM_NB; i++){
+                if(fs->IndexList[i] != -1){
+                list[j] = fs->IndexList[i];
+                j++;
             }
-            elem++;    
-        } 
-        index = Fat_GET_NEXT(&FAT, index);
-        free(buffer_block);
+
+        }
         free(fsn);
+        index = Fat_GET_NEXT(&FAT, index);
     }
-    
+    return list;
 }
 
 
 //TO MANAGE:
 int CHANGE_CWD(Folder_Struct* newCWD, int index){
-    
     char* buffer_block = READ(&DISK, &FAT, index, BLOCKS_SIZE);
     memcpy(newCWD, buffer_block, sizeof(Folder_Struct));
 
     CWD->FileHeader = newCWD->FileHeader;
     CWD->NumFile = newCWD->NumFile;
     CWD->PrevFolder = newCWD->PrevFolder;
-    memcpy(CWD->FileList, newCWD->FileList, sizeof(List_Elem)*5);    
-
+    memcpy(CWD->IndexList, newCWD->IndexList, MAX_ELEM_FB);    
 
     free(buffer_block);
     return 0;
 }
 
-int List_Elem_FIND(Folder_Struct* fs, List_Elem* dest, char* f_name){
-    int n = CWD->NumFile;
-    List_Elem list[n];
-    File_GET_LIST(CWD, list);
+int Index_List_FIND(File_Header* fh, Folder_Struct* fs, char* name){
 
-    for(int i = 0; i < n; i++){
-        if(strcmp(list[i].Name, f_name) == 0){
-            memcpy(dest, &list[i], sizeof(List_Elem));
+    int* list = Index_GET_LIST(fs);
+    for(int i = 0; i < fs->NumFile; i++){
+        File_Header_GET_FILE_HEADER(fh, list[i]);
+        if(strcmp(fh->Name, name) == 0){
             return 1;
         }
     }
-    dest = NULL;
     return 0;
 }
 
-void List_Elem_ADD(Folder_Struct* dest, List_Elem* source){
+void Index_List_ADD(Folder_Struct* fs, int index){
+        for(int i = 0; i < MAX_ELEM_FB; i ++){
+        if(fs->IndexList[i] == -1){
+            fs->IndexList[i] = index;
 
-    for(int i = 0; i < MAX_ELEM_FB; i++){
-        if (strcmp(dest->FileList[i].Name, "") == 0){
-            memcpy(&dest->FileList[i], source, sizeof(List_Elem));
-            dest->FileHeader.BSize += sizeof(List_Elem); 
-            dest->NumFile++;
-            REWRITE_BLOCK(&DISK, &FAT, dest->FileHeader.FirstBlock, (char*)dest);
+            fs->NumFile++;
+        
+            REWRITE_BLOCK(&DISK, &FAT, fs->FileHeader.FirstBlock, (char*)fs);
             return; 
         }
-    }    
+    }
 
     Folder_Struct_Next* fsn = calloc(1, sizeof(Folder_Struct_Next));
 
     int i = 1;
-    int index = Fat_GET_NEXT(&FAT, dest->FileHeader.FirstBlock);
+    int id = Fat_GET_NEXT(&FAT, fs->FileHeader.FirstBlock);
     int prev = 0;
 
     while(index != -1){
@@ -349,16 +336,15 @@ void List_Elem_ADD(Folder_Struct* dest, List_Elem* source){
 
         for(int i = 0; i < MAX_ELEM_NB; i++){
 
-            if(strcmp(fsn->FileList[i].Name, "") == 0){
-                
-                memcpy(&fsn->FileList[i], source, sizeof(List_Elem));
+            if(fsn->IndexList[i]  == -1){
+            
+                fsn->IndexList[i] = index;
 
-                dest->FileHeader.BSize += sizeof(List_Elem); 
-                dest->NumFile++;
-                dest->FileHeader.CurrentBlock = dest->FileHeader.FirstBlock;
-                REWRITE_BLOCK(&DISK, &FAT, dest->FileHeader.FirstBlock, (char*)dest);
+                fs->NumFile++;
+            
+                REWRITE_BLOCK(&DISK, &FAT, fs->FileHeader.FirstBlock, (char*)fs);
                 REWRITE_BLOCK(&DISK, &FAT, index, (char*)(fsn));
-                
+            
                 free(fsn);
                 free(buffer);
                 return;
@@ -371,25 +357,34 @@ void List_Elem_ADD(Folder_Struct* dest, List_Elem* source){
         free(buffer);
     }
 
-    if(index == -1){
+    if(id == -1){
 
         if(prev == 0){
-            prev = dest->FileHeader.FirstBlock; 
+            prev = fs->FileHeader.FirstBlock; 
         }
 
         Folder_Struct_Next_INIT(&DISK, &FAT, fsn, i, prev);
-        memcpy(&fsn->FileList[0], source, sizeof(List_Elem));
+        fsn->IndexList[0] = index;
 
-        index = Fat_GET_NEXT(&FAT, prev);
-        REWRITE_BLOCK(&DISK, &FAT, index, (char*)fsn);
+        id = Fat_GET_NEXT(&FAT, prev);
+        REWRITE_BLOCK(&DISK, &FAT, id, (char*)fsn);
 
-        dest->FileHeader.BSize += sizeof(List_Elem); 
-        dest->NumFile++;
+        fs->NumFile++;
+        fs->FileHeader.BSize++;
 
-        REWRITE_BLOCK(&DISK, &FAT, dest->FileHeader.FirstBlock, (char*)dest);
+        REWRITE_BLOCK(&DISK, &FAT, fs->FileHeader.FirstBlock, (char*)fs);
 
         free(fsn);
     }
+}
+
+void File_Header_RENAME(File_Header* fh, char* name){
+
+    strcpy(fh->Name, name);
+
+    REWRITE_HEADER(&DISK, &FAT, fh->FirstBlock, (char*)fh);
+    printf("SUCCESS RENAME: %s", name);
+
 }
 
 int File_CHECK_IS_FOLDER(File_Header* fh){
@@ -411,6 +406,7 @@ int File_EXTEND_FILE(char* buffer, int prev){
         REWRITE_BLOCK(&DISK, &FAT, index, buffer);
     }
     return index;
+
 }
 
 int File_EDIT(File_Struct* fs){
@@ -502,6 +498,7 @@ int File_EDIT(File_Struct* fs){
     free(string);
     free(file);
     return 0;
+
 }
 
 void File_CAT(File_Struct* fs){
@@ -625,7 +622,6 @@ int File_SEEK(File_Struct* fs, int offset){
 }
 
 void File_PRINT(File_Struct* fs){
-
     char* buffer_block = READ(&DISK, &FAT, fs->FileHeader.FirstBlock, BLOCKS_SIZE*fs->FileHeader.BSize);
     char* file = NULL;
 

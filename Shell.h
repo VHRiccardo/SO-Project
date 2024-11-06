@@ -1,6 +1,6 @@
 #pragma once
 
-#define TOTAL_COMMANDS 12
+#define TOTAL_COMMANDS 13
 #define MAX_INPUT 128
 
 #include "FileSystem.h"
@@ -46,6 +46,8 @@ int _edit(void* arg);
 
 int _seek(void* arg);
 
+int _rename(void* arg);
+
 //------------------------ARRAYS OF CMD AND FUN_PTR-------------------------//
 
 const static fun_ptr FN_ARRAY[TOTAL_COMMANDS] = {
@@ -60,5 +62,6 @@ const static fun_ptr FN_ARRAY[TOTAL_COMMANDS] = {
     _ls,        
     _edit,     
     _help,     
-    _seek      
+    _seek,
+    _rename      
 };

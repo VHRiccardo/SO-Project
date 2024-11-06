@@ -57,6 +57,8 @@ void WRITE(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer);
 
 void REWRITE_BLOCK(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer);
 
+void REWRITE_HEADER(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer);
+
 char* READ(Disk_Struct* disk, Fat_Struct* fat, int index, int size);
 
 void SAVE(Disk_Struct* disk, Fat_Struct* fat, char* name);

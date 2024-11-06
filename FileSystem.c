@@ -6,6 +6,7 @@
 
 //--PERSONAL INCLUDES--//
 #include "FileSystem.h"
+#include "File.h"
 #include "functions.h"
 
 //GLOBAL
@@ -212,6 +213,20 @@ void REWRITE_BLOCK(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer){
         Error_HANDLER("Index out of bound");
     }
     memcpy(disk->Buffer + (index * BLOCKS_SIZE), buffer, BLOCKS_SIZE);
+
+}
+
+void REWRITE_HEADER(Disk_Struct* disk, Fat_Struct* fat, int index, char* buffer){
+    if(!(disk->IsValid)){
+        Error_HANDLER("Disk NOT Existing");
+    }
+    if(!(fat->IsValid)){
+        Error_HANDLER("FAT NOT Existing");
+    }
+    if(index*BLOCKS_SIZE >= SIZE){
+        Error_HANDLER("Index out of bound");
+    }
+    memcpy(disk->Buffer + (index * BLOCKS_SIZE), buffer, sizeof(File_Header));
 
 }
 
